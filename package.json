@@ -1,0 +1,22 @@
+{
+  "name": "ember-control",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "dist/lib.js",
+  "bin": "dist/main.js",
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.10.0",
+  "devDependencies": {
+    "@types/node": "^22.15.17",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "node-ble": "^1.13.0"
+  }
+}
