@@ -1,22 +1,23 @@
 import NodeBle, { createBluetooth } from "node-ble";
+import type { IBluetoothAdapter, IBluetoothDevice } from "./types.js";
 
-export class BluetoothDevice {
-  #device: NodeBle.Device;
-  #gatt: NodeBle.GattServer | null = null;
+export class BluetoothDevice implements IBluetoothDevice {
+  device: NodeBle.Device;
+  gatt: NodeBle.GattServer | null = null;
   constructor(device: NodeBle.Device) {
-    this.#device = device;
+    this.device = device;
   }
 
   async init() {
-    this.#gatt = await this.#device.gatt();
+    this.gatt = await this.device.gatt();
   }
   async disconnect() {
-    await this.#device.disconnect();
+    await this.device.disconnect();
   }
 
   async getName(): Promise<string | Error> {
     try {
-      return this.#device.getName();
+      return await this.device.getName();
     } catch (err) {
       if (err instanceof Error) {
         return err;
@@ -26,7 +27,7 @@ export class BluetoothDevice {
   }
   async getAlias(): Promise<string | Error> {
     try {
-      return this.#device.getAlias();
+      return await this.device.getAlias();
     } catch (err) {
       if (err instanceof Error) {
         return err;
@@ -34,33 +35,36 @@ export class BluetoothDevice {
       return new Error("[device.getAlias()] unknown error");
     }
   }
+  async getAddress() {
+    return await this.device.getAddress();
+  }
 
   async readChar(serviceUuid: string, charUuid: string) {
-    if (!this.#gatt) {
-      throw new Error("gatt server must be initialized with 'device.init()'");
+    if (!this.gatt) {
+      throw new Error("gatt server must be initialized with 'device.init()' before 'readChar()'");
     }
-    const service = await this.#gatt.getPrimaryService(serviceUuid);
+    const service = await this.gatt.getPrimaryService(serviceUuid);
     const char = await service.getCharacteristic(charUuid);
 
     const value = await char.readValue();
     return value;
   }
   async writeChar(serviceUuid: string, charUuid: string, buf: Buffer) {
-    if (!this.#gatt) {
-      throw new Error("gatt server must be initialized with 'device.init()'");
+    if (!this.gatt) {
+      throw new Error("gatt server must be initialized with 'device.init()' before 'writeChar()'");
     }
-    const service = await this.#gatt.getPrimaryService(serviceUuid);
+    const service = await this.gatt.getPrimaryService(serviceUuid);
     const char = await service.getCharacteristic(charUuid);
     await char.writeValueWithoutResponse(buf);
   }
 }
 
-export class BluetoothAdapter {
+export class BluetoothAdapter implements IBluetoothAdapter<NodeBle.Device, BluetoothDevice[]> {
   #bt: {
     destroy: () => void;
     bluetooth: NodeBle.Bluetooth;
   };
-  #adapter: NodeBle.Adapter | null = null;
+  adapter: NodeBle.Adapter | null = null;
 
   constructor() {
     this.#bt = createBluetooth();
@@ -70,16 +74,28 @@ export class BluetoothAdapter {
     this.#bt.destroy();
   }
   async init() {
-    this.#adapter = await this.#bt.bluetooth.defaultAdapter();
+    this.adapter = await this.#bt.bluetooth.defaultAdapter();
   }
 
-  async scan() { }
-
-  async connectDevice(uuid: string) {
-    if (!this.#adapter) {
+  async scan(timeout: number = 0) {
+    if (!this.adapter) {
       throw new Error("adapter must be initialized with 'adapter.init()'");
     }
-    const device = await this.#adapter.waitDevice(uuid);
+    if (!await this.adapter.isDiscovering()) {
+      await this.adapter.startDiscovery();
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, timeout));
+
+    const uuids = await this.adapter.devices();
+    return await Promise.all(uuids.map(async uuid => new BluetoothDevice(await this.adapter!.waitDevice(uuid))));
+  }
+
+  async connectDevice(uuid: string) {
+    if (!this.adapter) {
+      throw new Error("adapter must be initialized with 'adapter.init()'");
+    }
+    const device = await this.adapter.waitDevice(uuid);
     if (!device) {
       return null;
     }

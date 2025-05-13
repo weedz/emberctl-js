@@ -1,4 +1,4 @@
-import { BluetoothDevice } from "./BluetoothAdapter.js";
+import { BluetoothAdapter, BluetoothDevice } from "./BluetoothAdapter.js";
 
 // ble?
 // const SERVICE_BLE_UUID = "00001800-0000-1000-8000-00805f9b34fb";
@@ -11,6 +11,20 @@ const TEMPERATURE_TARGET_UUID = "fc540003-236c-4c94-8fa9-944a3e5353fa";
 const TEMPERATURE_CURRENT_UUID = "fc540002-236c-4c94-8fa9-944a3e5353fa";
 const LED_COLOR_UUID = "fc540014-236c-4c94-8fa9-944a3e5353fa";
 const BATTERY_CURRENT_UUID = "fc540007-236c-4c94-8fa9-944a3e5353fa";
+
+export class EmberAdapter extends BluetoothAdapter {
+  async scan(timeout = 0) {
+    const devices = await super.scan(timeout);
+
+    const filteredDevices = await Promise.all(devices.map(async device => {
+      const name = await device.getName();
+      if (name === "Ember Ceramic Mug") {
+        return device;
+      }
+    }));
+    return filteredDevices.filter(Boolean) as typeof devices;
+  }
+}
 
 export class EmberDevice extends BluetoothDevice {
   async setLEDColor(color: { r: number; g: number; b: number; a?: number }) {
