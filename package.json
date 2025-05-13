@@ -1,13 +1,21 @@
 {
-  "name": "emberctl",
+  "name": "@weedzcokie/emberctl",
   "version": "1.0.0",
   "description": "",
   "type": "module",
   "main": "dist/lib.js",
-  "bin": "dist/main.js",
+  "bin": "bin/emberctl",
+  "exports": {
+    "./Ember": "./dist/lib/EmberBluetoothAdapter.js",
+    "./lib": "./dist/lib/index.js"
+  },
   "scripts": {
     "build": "tsc"
   },
+  "files": [
+    "./bin/emberctl",
+    "./dist"
+  ],
   "keywords": [],
   "author": "",
   "license": "MIT",

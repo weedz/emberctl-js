@@ -22,6 +22,16 @@ export class BluetoothDevice implements IBluetoothDevice {
     await this.device.disconnect();
   }
 
+  async getRSSI() {
+    try {
+      return await this.device.getRSSI();
+    } catch (err) {
+      if (err instanceof Error) {
+        return err;
+      }
+      return new Error("[device.getRSSI()] unknown error");
+    }
+  }
   async getName(): Promise<string | Error> {
     if (!this[_S_name]) {
       try {
