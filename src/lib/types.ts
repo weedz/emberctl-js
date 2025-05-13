@@ -1,7 +1,8 @@
 export interface IBluetoothAdapter<TDevice = unknown, TScanItem = unknown> {
   init: () => Promise<void>;
   scan: () => Promise<TScanItem>;
-  connectDevice: (uuid: string) => Promise<null | TDevice>;
+  connectDeviceUuid: (uuid: string) => Promise<null | TDevice>;
+  connectDevice: (device: any) => Promise<null | TDevice>;
 }
 
 export interface IBluetoothDevice {

@@ -1,9 +1,16 @@
 import NodeBle, { createBluetooth } from "node-ble";
 import type { IBluetoothAdapter, IBluetoothDevice } from "./types.js";
 
+const _S_name = Symbol("device name");
+const _S_address = Symbol("device address");
+
 export class BluetoothDevice implements IBluetoothDevice {
   device: NodeBle.Device;
   gatt: NodeBle.GattServer | null = null;
+
+  [_S_name]: null | string = null;
+  [_S_address]: null | string = null;
+
   constructor(device: NodeBle.Device) {
     this.device = device;
   }
@@ -16,14 +23,17 @@ export class BluetoothDevice implements IBluetoothDevice {
   }
 
   async getName(): Promise<string | Error> {
-    try {
-      return await this.device.getName();
-    } catch (err) {
-      if (err instanceof Error) {
-        return err;
+    if (!this[_S_name]) {
+      try {
+        this[_S_name] = await this.device.getName();
+      } catch (err) {
+        if (err instanceof Error) {
+          return err;
+        }
+        return new Error("[device.getName()] unknown error");
       }
-      return new Error("[device.getName()] unknown error");
     }
+    return this[_S_name];
   }
   async getAlias(): Promise<string | Error> {
     try {
@@ -36,7 +46,10 @@ export class BluetoothDevice implements IBluetoothDevice {
     }
   }
   async getAddress() {
-    return await this.device.getAddress();
+    if (!this[_S_address]) {
+      this[_S_address] = await this.device.getAddress();
+    }
+    return this[_S_address];
   }
 
   async readChar(serviceUuid: string, charUuid: string) {
@@ -91,7 +104,7 @@ export class BluetoothAdapter implements IBluetoothAdapter<NodeBle.Device, Bluet
     return await Promise.all(uuids.map(async uuid => new BluetoothDevice(await this.adapter!.waitDevice(uuid))));
   }
 
-  async connectDevice(uuid: string) {
+  async connectDeviceUuid(uuid: string) {
     if (!this.adapter) {
       throw new Error("adapter must be initialized with 'adapter.init()'");
     }
@@ -99,6 +112,10 @@ export class BluetoothAdapter implements IBluetoothAdapter<NodeBle.Device, Bluet
     if (!device) {
       return null;
     }
+    await device.connect();
+    return device;
+  }
+  async connectDevice(device: NodeBle.Device) {
     await device.connect();
     return device;
   }

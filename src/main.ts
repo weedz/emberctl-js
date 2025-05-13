@@ -37,7 +37,8 @@ for (const device of devices) {
   console.log("  name: %s (%s)", name, alias);
 }
 
-const device = await adapter.connectDevice("D0:E5:89:19:16:90");
+// const device = await adapter.connectDevice("D0:E5:89:19:16:90");
+const device = await adapter.connectDevice(devices[0].device);
 if (!device) {
   throw new Error("could not connect to device");
 }
