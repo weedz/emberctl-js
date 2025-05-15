@@ -1,14 +1,23 @@
 #!/usr/bin/env node
 import { EmberAdapter, EmberDevice } from "./lib/EmberBluetoothAdapter.js";
 
-function usage() {
-  process.stdout.write("Usage:\n");
-  process.stdout.write("  emberctl <command>\n\n");
-  process.stdout.write("Commands:\n");
-  process.stdout.write("  on      Turn the mug on\n");
-  process.stdout.write("  off     Turn the mug off\n");
-  process.stdout.write("  status  Display status; battery, temperature, and target temperature\n");
-  process.stdout.write("  scan    Scan for devices\n");
+function usage(command?: string) {
+  if (command === "service") {
+    process.stdout.write("Usage:\n");
+    process.stdout.write("  emberctl service [OPTIONS]\n\n");
+    process.stdout.write("Options:\n");
+    process.stdout.write("  --sway  Print colors with <span> instead of ANSI escape codes\n");
+    process.stdout.write("  --interval Interval in seconds between updates\n");
+  } else {
+    process.stdout.write("Usage:\n");
+    process.stdout.write("  emberctl [OPTIONS] <COMMAND>\n\n");
+    process.stdout.write("Commands:\n");
+    process.stdout.write("  on       Turn the mug on\n");
+    process.stdout.write("  off      Turn the mug off\n");
+    process.stdout.write("  status   Display status; battery, temperature, and target temperature\n");
+    process.stdout.write("  scan     Scan for devices\n");
+    process.stdout.write("  service  Start as a service for eg. waybar\n");
+  }
 }
 
 const OUR_DEVICE_ID = "D0:E5:89:19:16:90";
@@ -28,10 +37,9 @@ async function initDevice(uuid: string) {
   return { adapter, ember };
 }
 
-export async function main() {
-
+export async function main(argv: string[]) {
   // parse CLI. Assume we run node
-  const args = process.argv.slice(2);
+  const args = argv.slice(2);
 
   if (args.length === 1) {
     if (args[0] === "on") {
@@ -112,9 +120,10 @@ export async function main() {
         ]);
 
         const temp = Math.round(currentTemp / 10) / 10;
-        const tempText = targetTemp > 0 ? `\x1b[93m${temp.toString(10)}\x1b[0m` : temp.toString(10);
+        // TODO: Refactor color stuff to handle waybar/sway specific coloring (with <span>) in addition to ANSI escape codes
+        const tempText = targetTemp > 0 ? `<span color="orange">${temp.toString(10)}</span>` : temp.toString(10);
 
-        const batteryText = battery.isCharging ? `\x1b[92m${battery.currentCharge.toString(10)}\x1b[0m` : battery.currentCharge.toString(10);
+        const batteryText = battery.isCharging ? `<span color="springgreen">${battery.currentCharge.toString(10)}</span>` : battery.currentCharge.toString(10);
 
         process.stdout.write(`${tempText}C ${batteryText}%\n`);
 
@@ -124,6 +133,6 @@ export async function main() {
       usage();
     }
   } else {
-    usage();
+    usage(args[0]);
   }
 }
