@@ -19,10 +19,10 @@ export class EmberAdapter extends BluetoothAdapter {
     const filteredDevices = await Promise.all(devices.map(async device => {
       const name = await device.getName();
       if (name === "Ember Ceramic Mug") {
-        return device;
+        return new EmberDevice(device.device);
       }
     }));
-    return filteredDevices.filter(Boolean) as typeof devices;
+    return filteredDevices.filter(Boolean) as EmberDevice[];
   }
 }
 
